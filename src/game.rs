@@ -1,12 +1,25 @@
-use bevy::app::Plugin;
-use bevy::app::AppBuilder;
-use bevy::ecs::system::{IntoSystem, Commands, Res, ResMut};
-use bevy::asset::{Assets, AssetServer};
-use bevy::sprite::ColorMaterial;
-use bevy::render::entity::OrthographicCameraBundle;
+use bevy::{
+    app::{Plugin, AppBuilder},
+    ecs::system::{IntoSystem, Commands, Res, ResMut},
+    asset::{Assets, AssetServer},
+    sprite::ColorMaterial,
+    render::{
+        entity::OrthographicCameraBundle,
+        color::Color
+    },
+    text::{
+        prelude::{VerticalAlign, HorizontalAlign},
+        Text,
+        TextStyle,
+        Text2dBundle,
+        TextAlignment
+    }
+};
 
-use crate::player::Player;
-use crate::obstacle::Obstacle;
+use crate::{
+    player::Player,
+    obstacle::Obstacle
+};
 
 pub struct Position {
     x: i32,
@@ -52,12 +65,24 @@ impl Game {
 }
 
 fn setup(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>, asset_server: Res<AssetServer>) {
-    println!("setup");
+    println!("Game setup");
 
     // Setup camera
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+
+    // Load fonts
+    // let font_regular = asset_server.load("fonts/OpenSans-Regular.ttf");
+    
+    // Draw stage counter
+    // commands.spawn_bundle(Text2dBundle {
+        // text: Text::with_section(
+                // "test",
+                // TextStyle { font: font_regular, font_size: 60., color: Color::WHITE },
+                // TextAlignment { vertical: VerticalAlign::Top, horizontal: HorizontalAlign::Center }),
+        // ..Default::default()
+    // });
 }
 
 fn start_game() {
-    println!("start")
+    // println!("start")
 }
