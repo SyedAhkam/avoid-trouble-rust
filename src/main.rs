@@ -76,35 +76,54 @@ fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
     asset_server.load_untyped("fonts/OpenSans-Bold.ttf");
 
     // Display State 
+    // commands
+        // .spawn_bundle(TextBundle {
+            // style: Style {
+                // align_self: AlignSelf::FlexEnd,
+                // ..Default::default()
+            // },
+            // text: Text {
+                // sections: vec![
+                    // TextSection {
+                        // value: "State: ".to_string(),
+                        // style: TextStyle {
+                            // font: asset_server.get_handle("fonts/OpenSans-Regular.ttf"),
+                            // font_size: 30.0,
+                            // color: Color::WHITE,
+                        // },
+                    // },
+                    // TextSection {
+                        // value: "".to_string(),
+                        // style: TextStyle {
+                            // font: asset_server.get_handle("fonts/OpenSans-Regular.ttf"),
+                            // font_size: 30.0,
+                            // color: Color::GOLD,
+                        // },
+                    // },
+                // ],
+                // ..Default::default()
+            // },
+            // ..Default::default()
+        // })
+        // .insert(AppStateLabel);
+
+    // Display State
     commands
-        .spawn_bundle(TextBundle {
+        .spawn_bundle(TextBundle{
             style: Style {
                 align_self: AlignSelf::FlexEnd,
+                margin: Rect {left: Val::Px(2.), ..Default::default()},
                 ..Default::default()
             },
-            // Use `Text` directly
-            text: Text {
-                // Construct a `Vec` of `TextSection`s
-                sections: vec![
-                    TextSection {
-                        value: "State: ".to_string(),
-                        style: TextStyle {
-                            font: asset_server.get_handle("fonts/OpenSans-Regular.ttf"),
-                            font_size: 30.0,
-                            color: Color::WHITE,
-                        },
-                    },
-                    TextSection {
-                        value: "".to_string(),
-                        style: TextStyle {
-                            font: asset_server.get_handle("fonts/OpenSans-Regular.ttf"),
-                            font_size: 30.0,
-                            color: Color::GOLD,
-                        },
-                    },
-                ],
-                ..Default::default()
-            },
+            text: Text::with_section(
+                "",
+                TextStyle {
+                    font: asset_server.get_handle("fonts/OpenSans-Regular.ttf"),
+                    font_size: 30.,
+                    color: Color::GOLD
+                },
+                Default::default()
+            ),
             ..Default::default()
         })
         .insert(AppStateLabel);
@@ -187,7 +206,7 @@ fn change_state(mut app_state: ResMut<State<AppState>>, keys: Res<Input<KeyCode>
 
 fn show_state(app_state: Res<State<AppState>>, mut query: Query<&mut Text, With<AppStateLabel>>) {
     for mut text in query.iter_mut() {
-        text.sections[1].value = app_state.current().to_string();
+        text.sections[0].value = app_state.current().to_string();
     }
 }
 
