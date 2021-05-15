@@ -2,15 +2,19 @@
 
 use bevy::{
     prelude::*,
+    ecs::system::EntityCommands,
     diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin}
 };
 
 use std::fmt;
 
-const GAME_TITLE: &str = "Avoid Trouble";
-const WINDOW_WIDTH: f32 = 700.;
-const WINDOW_HEIGHT: f32 = 500.;
-const BACKGROUND_COLOR: &str = "2E3440";
+static GAME_TITLE: &str = "Avoid Trouble";
+static WINDOW_WIDTH: f32 = 700.;
+static WINDOW_HEIGHT: f32 = 500.;
+
+static BACKGROUND_COLOR: &str = "2E3440";
+static PRIMARY_TEXT_COLOR: &str = "BF616A";
+static SECONDARY_TEXT_COLOR: &str = "EBCB8B";
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 enum AppState {
@@ -26,8 +30,10 @@ impl fmt::Display for AppState {
     }
 }
 
+// Structs for UI
 struct AppStateLabel;
 struct FpsText;
+struct TitleText;
 
 fn main() {
     App::build()
@@ -58,11 +64,30 @@ fn main() {
         .add_startup_system(startup.system())
 
         // States
-        .add_system(change_state.system())
+        .add_system(change_state_menu.system())
+        .add_system(change_state_game.system())
+
         .add_system(show_state.system())
 
         // FPS counter
         .add_system(show_fps.system())
+
+
+        // UI specific systems
+        .add_system_set(
+            SystemSet::on_enter(AppState::MainMenu)
+                .with_system(setup_ui_main_menu.system())
+        )
+        .add_system_set(
+            SystemSet::on_resume(AppState::MainMenu)
+                .with_system(setup_ui_main_menu.system())
+        )
+        .add_system_set(
+            SystemSet::on_exit(AppState::MainMenu)
+                .with_system(cleanup_ui_main_menu.system())
+        )
+
+        // Finallly run the `App`
         .run()
 }
 
@@ -70,42 +95,11 @@ fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
     info!("Starting up"); 
 
     commands.spawn_bundle(UiCameraBundle::default());
+    //TODO: dont forget 2d camera
 
     // Load fonts
     asset_server.load_untyped("fonts/OpenSans-Regular.ttf");
     asset_server.load_untyped("fonts/OpenSans-Bold.ttf");
-
-    // Display State 
-    // commands
-        // .spawn_bundle(TextBundle {
-            // style: Style {
-                // align_self: AlignSelf::FlexEnd,
-                // ..Default::default()
-            // },
-            // text: Text {
-                // sections: vec![
-                    // TextSection {
-                        // value: "State: ".to_string(),
-                        // style: TextStyle {
-                            // font: asset_server.get_handle("fonts/OpenSans-Regular.ttf"),
-                            // font_size: 30.0,
-                            // color: Color::WHITE,
-                        // },
-                    // },
-                    // TextSection {
-                        // value: "".to_string(),
-                        // style: TextStyle {
-                            // font: asset_server.get_handle("fonts/OpenSans-Regular.ttf"),
-                            // font_size: 30.0,
-                            // color: Color::GOLD,
-                        // },
-                    // },
-                // ],
-                // ..Default::default()
-            // },
-            // ..Default::default()
-        // })
-        // .insert(AppStateLabel);
 
     // Display State
     commands
@@ -120,7 +114,7 @@ fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
                 TextStyle {
                     font: asset_server.get_handle("fonts/OpenSans-Regular.ttf"),
                     font_size: 30.,
-                    color: Color::GOLD
+                    color: Color::hex(SECONDARY_TEXT_COLOR).unwrap()
                 },
                 Default::default()
             ),
@@ -154,7 +148,7 @@ fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
                         style: TextStyle {
                             font: asset_server.get_handle("fonts/OpenSans-Regular.ttf"),
                             font_size: 30.0,
-                            color: Color::GOLD,
+                            color: Color::hex(SECONDARY_TEXT_COLOR).unwrap(),
                         },
                     },
                 ],
@@ -204,6 +198,22 @@ fn change_state(mut app_state: ResMut<State<AppState>>, keys: Res<Input<KeyCode>
     }
 }
 
+fn change_state_menu(mut app_state: ResMut<State<AppState>>, keys: Res<Input<KeyCode>>) {
+    if keys.just_pressed(KeyCode::M) {
+        info!("M was pressed");
+
+        app_state.set(AppState::MainMenu).unwrap();
+    }
+}
+
+fn change_state_game(mut app_state: ResMut<State<AppState>>, keys: Res<Input<KeyCode>>) {
+    if keys.just_pressed(KeyCode::G) {
+        info!("G was pressed");
+
+        app_state.set(AppState::InGame).unwrap();
+    }
+}
+
 fn show_state(app_state: Res<State<AppState>>, mut query: Query<&mut Text, With<AppStateLabel>>) {
     for mut text in query.iter_mut() {
         text.sections[0].value = app_state.current().to_string();
@@ -218,5 +228,37 @@ fn show_fps(diagnostics: Res<Diagnostics>, mut query: Query<&mut Text, With<FpsT
                 text.sections[1].value = format!("{:.2}", average);
             }
         }
+    }
+}
+
+fn setup_ui_main_menu(mut commands: Commands, asset_server: Res<AssetServer>) {
+    info!("MainMenu setup");
+
+    // Title Text
+    commands
+        .spawn_bundle(TextBundle{
+            style: Style {
+                align_self: AlignSelf::Center,
+                position_type: PositionType::Absolute,
+                position: Rect {left: Val::Px(200.), right: Val::Px(200.), top: Val::Px(50.), ..Default::default()},
+                ..Default::default()
+            },
+            text: Text::with_section(
+                GAME_TITLE,
+                TextStyle {
+                    font: asset_server.get_handle("fonts/OpenSans-Bold.ttf"),
+                    font_size: 60.,
+                    color: Color::hex(PRIMARY_TEXT_COLOR).unwrap()
+                },
+                Default::default()
+            ),
+            ..Default::default()
+        })
+        .insert(TitleText);
+}
+
+fn cleanup_ui_main_menu(mut commands: Commands, query: Query<Entity, With<TitleText>>) {
+    for entity in query.iter() {
+        commands.entity(entity).despawn();
     }
 }
