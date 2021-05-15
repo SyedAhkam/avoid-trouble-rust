@@ -2,7 +2,6 @@
 
 use bevy::{
     prelude::*,
-    ecs::system::EntityCommands,
     diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin}
 };
 
@@ -29,6 +28,9 @@ impl fmt::Display for AppState {
         write!(f, "{:?}", self)
     }
 }
+
+// Store all assets inside here to workaround handle drop issues
+struct AllAssets(Vec<HandleUntyped>);
 
 // Structs for UI
 struct AppStateLabel;
@@ -63,7 +65,7 @@ fn main() {
         // Game startup system
         .add_startup_system(startup.system())
 
-        // States
+        // State change systems
         .add_system(change_state_menu.system())
         .add_system(change_state_game.system())
 
@@ -71,7 +73,6 @@ fn main() {
 
         // FPS counter
         .add_system(show_fps.system())
-
 
         // UI specific systems
         .add_system_set(
@@ -96,10 +97,11 @@ fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
 
     commands.spawn_bundle(UiCameraBundle::default());
     //TODO: dont forget 2d camera
-
-    // Load fonts
-    asset_server.load_untyped("fonts/OpenSans-Regular.ttf");
-    asset_server.load_untyped("fonts/OpenSans-Bold.ttf");
+   
+    // Load assets
+    commands.insert_resource(
+        AllAssets(asset_server.load_folder("").expect("failed to load assets"))
+    );
 
     // Display State
     commands
@@ -159,58 +161,33 @@ fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
         .insert(FpsText);
 }
 
-fn change_state(mut app_state: ResMut<State<AppState>>, keys: Res<Input<KeyCode>>) {
+fn change_state_menu(mut app_state: ResMut<State<AppState>>, keys: Res<Input<KeyCode>>) {
     if keys.just_pressed(KeyCode::M) {
         info!("M was pressed!");
 
         match app_state.set(AppState::MainMenu) {
             Ok(()) => {
-                info!("Changed to menu state");
+                info!("Changed to MainMenu state");
             },
             Err(_StateError) => {
-                warn!("Already in menu state");
+                warn!("Already in MainMenu state");
             }
         };
-    }
-    if keys.just_pressed(KeyCode::G) {
-        info!("G was pressed!");
-        
-        match app_state.set(AppState::InGame) {
-            Ok(()) => {
-                info!("Changed to game state");
-            },
-            Err(_StateError) => {
-                warn!("Already in game state");
-            }
-        };
-    }
-    if keys.just_pressed(KeyCode::P) {
-        info!("P was pressed!");
-        
-        match app_state.set(AppState::Paused) {
-            Ok(()) => {
-                info!("Changed to paused state");
-            },
-            Err(_StateError) => {
-                warn!("Already in paused state");
-            }
-        };    
-    }
-}
-
-fn change_state_menu(mut app_state: ResMut<State<AppState>>, keys: Res<Input<KeyCode>>) {
-    if keys.just_pressed(KeyCode::M) {
-        info!("M was pressed");
-
-        app_state.set(AppState::MainMenu).unwrap();
     }
 }
 
 fn change_state_game(mut app_state: ResMut<State<AppState>>, keys: Res<Input<KeyCode>>) {
     if keys.just_pressed(KeyCode::G) {
-        info!("G was pressed");
-
-        app_state.set(AppState::InGame).unwrap();
+        info!("G was pressed!");
+        
+        match app_state.set(AppState::InGame) {
+            Ok(()) => {
+                info!("Changed to InGame state");
+            },
+            Err(_StateError) => {
+                warn!("Already in InGame state");
+            }
+        };
     }
 }
 
